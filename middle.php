@@ -58,8 +58,8 @@ function query_backend($user, $pass){
   $url = 'https://web.njit.edu/~npm26/logingate.php';
   $curl = curl_init();
   $fields = array(
-      "username" => urlencode($user),
-      "password" => urlencode($pass)
+      "username" => $user,
+      "password" => $pass
   );
   curl_setopt_array($curl, array(
     CURLOPT_URL => $url,
