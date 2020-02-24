@@ -54,12 +54,18 @@ function check_credentials($user, $pass){
     }
 }
 
-function query_backend($url){
+function query_backend($user, $pass){
+  $url = 'https://web.njit.edu/~npm26/logingate.php';
   $curl = curl_init();
+  $fields = array(
+      "username" => urlencode($user),
+      "password" => urlencode($pass)
+  );
   curl_setopt_array($curl, array(
     CURLOPT_URL => $url,
     //CURLOPT_VERBOSE => true,
-    //CURLOPT_POST => true,
+    CURLOPT_POST => count($fields),
+    CURLOPT_POSTFIELDS => json_encode($fields),
     CURLOPT_RETURNTRANSFER => true
   ));
   $response = curl_exec($curl);
@@ -85,8 +91,10 @@ $pass = $frontend_data['password'];
 //$user = $argv[1];
 //$pass = $argv[2];
 
-$backend_url = 'https://web.njit.edu/~npm26/logingate.php';
-$frontend_msg = login_response_json(query_backend($backend_url), check_credentials($user, $pass), $user);
+// construct response
+$backend_response = query_backend($user, $pass);
+$frontend_msg = login_response_json($backend_response, check_credentials($user, $pass), $user);
+// echo to frontend
 header('Content-Type: application/json');
 echo $frontend_msg;
 
