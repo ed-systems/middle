@@ -3,7 +3,7 @@
 function python3_exec($lines){
   // combine input lines into newline seperated string
   $lines_arg = join("\n", $lines);
-  $exec_str = sprintf("python3 -c '%s'", $lines_arg);
+  $exec_str = sprintf("python -c '%s'", $lines_arg);
   $out = system($exec_str, $ret_code);
   // returns array (output, ret code). php system() returns last line only
   return array($out, $ret_code);
@@ -44,13 +44,13 @@ function grade_question($input){
   return json_encode($copy);
 }
 
-$backend_input = file_get_contents('php://input');
-$backend_data = json_decode($backend_input, true);
-echo grade_question($backend_data);
+#$backend_input = file_get_contents('php://input');
+#$backend_data = json_decode($backend_input, true);
+#echo grade_question($backend_data);
 
-/* python3 exec test
-echo print_r(python3_exec(array('print("hello")', 'print("world")')));
-*/ 
+// python3 exec test
+//echo print_r(python3_exec(array('print("hello")', 'print("world")')));
+echo "hello";
 /* grade question test
 $test_json = '{
                 "questionID": 1,
