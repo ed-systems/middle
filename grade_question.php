@@ -44,13 +44,12 @@ function grade_question($input){
   return json_encode($copy);
 }
 
-#$backend_input = file_get_contents('php://input');
-#$backend_data = json_decode($backend_input, true);
-#echo grade_question($backend_data);
+$backend_input = file_get_contents('php://input');
+$backend_data = json_decode($backend_input, true);
+echo grade_question($backend_data);
 
 // python3 exec test
 //echo print_r(python3_exec(array('print("hello")', 'print("world")')));
-echo "hello";
 /* grade question test
 $test_json = '{
                 "questionID": 1,
