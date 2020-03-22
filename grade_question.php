@@ -4,7 +4,7 @@ function python3_exec($lines){
   // combine input lines into newline seperated string
   $lines_arg = join("\n", $lines);
   $exec_str = sprintf("python -c '%s'", $lines_arg);
-  $out = system($exec_str, $ret_code);
+  exec($exec_str, $out, $ret_code);
   // returns array (output, ret code). php system() returns last line only
   return array($out, $ret_code);
 }
@@ -33,7 +33,7 @@ function grade_question($input){
     $func_call_str = sprintf('print(%s(%s))', $func_name, $question_args);
     // exec and get result, add to json copy
     $res = python3_exec(array($question_def, $func_call_str));
-    $copy[$res_idx] = $res[0];
+    $copy[$res_idx] = $res[0][0];
     // compare result to output and add points if correct
     if ($copy[$out_idx] == $copy[$res_idx]){
       $grade += $testcase_points;
