@@ -17,7 +17,9 @@ function grade_question($input){
   preg_match($func_name_regex, $question_def, $matches);
   $func_name = $matches['func_name'];
   $num_args = sizeof(explode(",", $matches['args']));
-  // FUNCTION NAME STIPULATION
+  // GRADING:
+  $grade = 0;
+  // ...FUNCTION NAME STIPULATION
   if ($copy['function_name'] == $func_name){
     $copy['function_name_result'] = true;
     $copy['function_name_result_points'] = $copy['function_name_points'];
@@ -26,7 +28,8 @@ function grade_question($input){
     $copy['function_name_result'] = false;
     $copy['function_name_result_points'] = 0;
   }
-  // COLON STIPULATION
+  $grade += $copy['function_name_result_points'];
+  // ...COLON STIPULATION
   if ($matches['colon'] == ':'){
     $copy['colon_result'] = true;
     $copy['colon_result_points'] = $copy['colon_points'];
@@ -35,7 +38,8 @@ function grade_question($input){
     $copy['colon_result'] = false;
     $copy['colon_result_points'] = 0;
   }
-  // CONSTRAINT STIPULATION
+  $grade += $copy['colon_result_points'];
+  // ...CONSTRAINT STIPULATION
   $constraint_regex = sprintf('/%s/', $copy['constraint']);
   if (preg_match($constraint_regex, $matches['def'])){
     $copy['constraint_result'] = true;
@@ -45,11 +49,11 @@ function grade_question($input){
     $copy['constraint_result'] = false;
     $copy['constraint_result_points'] = 0;
   }
-  // TEST CASES
+  $grade += $copy['constraint_result_points'];
+  // ...TEST CASES
   $num_testcases = 6;
   // user may not have included semicolon, so reconstruct valid python exec str
   $def_str = sprintf('def %s(%s): %s', $func_name, $matches['args'], $matches['def']);
-  $grade = 0;
   for ($n = 1; $n <= $num_testcases; $n++){
     $in_idx = sprintf('input%d', $n);
     $out_idx = sprintf('output%d', $n);
@@ -78,27 +82,28 @@ function grade_question($input){
       $copy[$res_points_idx] = null;
     }
   }
-  // add final grade
+  // final grade
   $copy['autoGrade'] = $grade;
   return json_encode($copy);
 }
 
-// NORMAL OPERATION
+/* NORMAL OPERATION
 $backend_input = file_get_contents('php://input');
 $backend_data = json_decode($backend_input, true);
 echo grade_question($backend_data);
+#*/
 
 // TESTS
 // python3 exec
 //echo print_r(python3_exec(array('print("hello")', 'print("world")')));
 
-/*// grade question test
+#/* grade question test
 $test_json = <<<JSON
 {
   "questionID": 1,
   "points": 20,
-  "solution": "def add(a,b) return a + b",
-  "function_name": "name",
+  "solution": "def add(a,b): return a + b",
+  "function_name": "add",
   "function_name_points": 5,
   "constraint": "return",
   "constraint_points": 5,
@@ -127,5 +132,5 @@ $test = json_decode($test_json, true);
 $res_json = grade_question($test);
 #echo $res_json;
 print_r(json_decode($res_json, true));
-*/
+#*/
 ?>
