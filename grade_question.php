@@ -87,7 +87,7 @@ function grade_question($input){
   return json_encode($copy);
 }
 
-/* NORMAL OPERATION
+#/* NORMAL OPERATION
 $backend_input = file_get_contents('php://input');
 $backend_data = json_decode($backend_input, true);
 echo grade_question($backend_data);
@@ -97,7 +97,7 @@ echo grade_question($backend_data);
 // python3 exec
 //echo print_r(python3_exec(array('print("hello")', 'print("world")')));
 
-#/* grade question test
+/* grade question test
 $test_json = <<<JSON
 {
   "questionID": 1,
