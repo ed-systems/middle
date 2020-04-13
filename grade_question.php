@@ -12,6 +12,7 @@ function python3_exec($lines){
 function grade_question($input){
   $copy = $input;
   $question_def = $copy['solution'];
+  #$question_def = str_replace('\n', '', $question_def);
   // parse for function name and number of args - remember, this is for extracing input elements rather than validating. colon is NOT optional (here it is, just to see if they entered it)
   $func_name_regex = '/def (?<func_name>\w+)\((?<args>[\w, ]+)\)(?<colon>:?) (?<def>.*)/';
   preg_match($func_name_regex, $question_def, $matches);
@@ -21,32 +22,32 @@ function grade_question($input){
   $grade = 0;
   // ...FUNCTION NAME STIPULATION
   if ($copy['function_name'] == $func_name){
-    $copy['function_name_result'] = true;
+    $copy['function_name_result'] = 'true';
     $copy['function_name_result_points'] = $copy['function_name_points'];
   }
   else {
-    $copy['function_name_result'] = false;
+    $copy['function_name_result'] = 'false';
     $copy['function_name_result_points'] = 0;
   }
   $grade += $copy['function_name_result_points'];
   // ...COLON STIPULATION
   if ($matches['colon'] == ':'){
-    $copy['colon_result'] = true;
+    $copy['colon_result'] = 'true';
     $copy['colon_result_points'] = $copy['colon_points'];
   }
   else {
-    $copy['colon_result'] = false;
+    $copy['colon_result'] = 'false';
     $copy['colon_result_points'] = 0;
   }
   $grade += $copy['colon_result_points'];
   // ...CONSTRAINT STIPULATION
   $constraint_regex = sprintf('/%s/', $copy['constraint']);
   if (preg_match($constraint_regex, $matches['def'])){
-    $copy['constraint_result'] = true;
+    $copy['constraint_result'] = 'true';
     $copy['constraint_result_points'] = $copy['constraint_points'];
   }
   else {
-    $copy['constraint_result'] = false;
+    $copy['constraint_result'] = 'false';
     $copy['constraint_result_points'] = 0;
   }
   $grade += $copy['constraint_result_points'];
@@ -128,9 +129,11 @@ $test_json = <<<JSON
   "output6_points": 9
 }
 JSON;
+#$test_json = str_replace("\n", '\n', $test_json);
 $test = json_decode($test_json, true);
-$res_json = grade_question($test);
+print_r($test);
+#$res_json = grade_question($test);
 #echo $res_json;
-print_r(json_decode($res_json, true));
+#print_r(json_decode($res_json, true));
 #*/
 ?>
