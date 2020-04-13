@@ -13,7 +13,7 @@ function grade_question($input){
   $copy = $input;
   $question_def = $copy['solution'];
   // parse for function name and number of args - remember, this is for extracing input elements rather than validating. colon is NOT optional (here it is, just to see if they entered it)
-  $func_name_regex = '/def (?<func_name>\w+)\((?<args>[\w,]+)\)(?<colon>:?) (?<def>.*)/';
+  $func_name_regex = '/def (?<func_name>\w+)\((?<args>[\w, ]+)\)(?<colon>:?) (?<def>.*)/';
   preg_match($func_name_regex, $question_def, $matches);
   $func_name = $matches['func_name'];
   $num_args = sizeof(explode(",", $matches['args']));
@@ -87,7 +87,7 @@ function grade_question($input){
   return json_encode($copy);
 }
 
-/* NORMAL OPERATION
+#/* NORMAL OPERATION
 $backend_input = file_get_contents('php://input');
 $backend_data = json_decode($backend_input, true);
 echo grade_question($backend_data);
@@ -97,35 +97,35 @@ echo grade_question($backend_data);
 // python3 exec
 //echo print_r(python3_exec(array('print("hello")', 'print("world")')));
 
-#/* grade question test
+/* grade question test
 $test_json = <<<JSON
 {
-  "questionID": 1,
-  "points": 20,
-  "solution": "def add(a,b): print(a + b)",
+  "questionID": "32",
+  "points": "77",
+  "solution": "def add(a, b): return(a + b)",
   "function_name": "add",
-  "function_name_points": 5,
-  "constraint": "return",
-  "constraint_points": 5,
-  "colon_points": 5,
-  "input1": "2, 5",
-  "output1": "7",
-  "output1_points": 10,
-  "input2": "3, 7",
-  "output2": "10",
-  "output2_points": 10,
-  "input3": "2, 5",
-  "output3": "7",
-  "output3_points": 10,
-  "input4": "3, 7",
-  "output4": "10",
-  "output4_points": 10,
-  "input5": null,
-  "output5": null,
-  "output5_points": null,
-  "input6": null,
-  "output6": null,
-  "output6_points": null
+  "function_name_points": 1,
+  "constraint": "print",
+  "constraint_points": 2,
+  "colon_points": 3,
+  "input1": "1, 2",
+  "input2": "3, 4",
+  "input3": "7, 8",
+  "input4": "-1, 1",
+  "input5": "2, 2",
+  "input6": "0, 0",
+  "output1": "3",
+  "output2": "7",
+  "output3": "15",
+  "output4": "0",
+  "output5": "4",
+  "output6": "0",
+  "output1_points": 4,
+  "output2_points": 5,
+  "output3_points": 6,
+  "output4_points": 7,
+  "output5_points": 8,
+  "output6_points": 9
 }
 JSON;
 $test = json_decode($test_json, true);
