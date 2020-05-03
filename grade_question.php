@@ -9,12 +9,12 @@ function python3_exec($lines){
 }
 
 // see https://github.com/ed-systems/middle/issues/6
-function grade_question($input){
+function grade_question($input, $solution_encoded){
   $copy = $input;
-  $question_def = $copy['solution'];
-  #$question_def = str_replace('\n', '', $question_def);
+  # new - get solution from url arguments rather than json
+  $question_def = urldecode($solution_encoded);
   // parse for function name and number of args - remember, this is for extracing input elements rather than validating. colon is NOT optional (here it is, just to see if they entered it)
-  $func_name_regex = '/def (?<func_name>\w+)\((?<args>[\w, ]+)\)(?<colon>:?) (?<def>.*)/';
+  $func_name_regex = '/def (?<func_name>\w+)\((?<args>[\w, ]+)\)(?<colon>:?)\s?(?<def>\X+)/';
   preg_match($func_name_regex, $question_def, $matches);
   $func_name = $matches['func_name'];
   $num_args = sizeof(explode(",", $matches['args']));
@@ -55,10 +55,20 @@ function grade_question($input){
   $num_testcases = 6;
   // user may not have included semicolon, so reconstruct valid python exec str
   $def_str = sprintf('def %s(%s): %s', $func_name, $matches['args'], $matches['def']);
+  // calculate points left, out of 100, after func_name/colon/constraint...
+  $remaining_points = 100 - ($copy['colon_points'] + $copy['function_name_points'] + $copy['constraint_points']);
+  // find the number of non_null test cases, calculate question worth
+  $num_valid_questions = 0;
+  for ($n = 1; $n <= $num_testcases; $n++){
+    $in_idx = sprintf('input%d', $n);
+    $num_valid_questions += 1;
+  }
+  $question_points = $remaining_points/$num_valid_questions;
+  // ... save to json
+  $copy['output_points'] = $question_points;
   for ($n = 1; $n <= $num_testcases; $n++){
     $in_idx = sprintf('input%d', $n);
     $out_idx = sprintf('output%d', $n);
-    $out_points_idx = sprintf('output%d_points', $n);
     $res_idx = sprintf('result%d', $n);
     $res_points_idx = sprintf('result%d_points', $n);
     $question_args = $copy[$in_idx];
@@ -71,8 +81,8 @@ function grade_question($input){
       $copy[$res_idx] = $res[0][0];
       // compare result to output and add points if correct
       if ($copy[$out_idx] == $copy[$res_idx]){
-        $copy[$res_points_idx] = $copy[$out_points_idx];
-        $grade += $copy[$out_points_idx];
+        $copy[$res_points_idx] = $question_points;
+        $grade += $question_points;
       }
       else {
         $copy[$res_points_idx] = 0;
@@ -91,7 +101,7 @@ function grade_question($input){
 #/* NORMAL OPERATION
 $backend_input = file_get_contents('php://input');
 $backend_data = json_decode($backend_input, true);
-echo grade_question($backend_data);
+echo grade_question($backend_data, $_GET['solution']);
 #*/
 
 // TESTS
@@ -99,16 +109,16 @@ echo grade_question($backend_data);
 //echo print_r(python3_exec(array('print("hello")', 'print("world")')));
 
 /* grade question test
+$test_solution = "def%20add%28a%2Cb%29%3A%0A%20%20%20%20return%20a%2Bb";
 $test_json = <<<JSON
 {
   "questionID": "32",
-  "points": "77",
-  "solution": "def add(a, b): return(a + b)",
+  "points": "100",
   "function_name": "add",
-  "function_name_points": 1,
+  "function_name_points": 10,
   "constraint": "print",
-  "constraint_points": 2,
-  "colon_points": 3,
+  "constraint_points": 20,
+  "colon_points": 10,
   "input1": "1, 2",
   "input2": "3, 4",
   "input3": "7, 8",
@@ -120,20 +130,13 @@ $test_json = <<<JSON
   "output3": "15",
   "output4": "0",
   "output5": "4",
-  "output6": "0",
-  "output1_points": 4,
-  "output2_points": 5,
-  "output3_points": 6,
-  "output4_points": 7,
-  "output5_points": 8,
-  "output6_points": 9
+  "output6": "0"
 }
 JSON;
 #$test_json = str_replace("\n", '\n', $test_json);
 $test = json_decode($test_json, true);
-print_r($test);
-#$res_json = grade_question($test);
+$res_json = grade_question($test, $test_solution);
 #echo $res_json;
-#print_r(json_decode($res_json, true));
+print_r(json_decode($res_json, true));
 #*/
 ?>
