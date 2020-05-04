@@ -2,21 +2,22 @@
 function python3_exec($lines){
   // combine input lines into newline seperated string
   $lines_arg = join("\n", $lines);
-  $exec_str = sprintf("python -c '%s'", $lines_arg);
+  $exec_str = sprintf("python -c \"%s\"", $lines_arg);
   exec($exec_str, $out, $ret_code);
   // returns array (output, ret code). php system() returns last line only
   return array($out, $ret_code);
 }
 
 // see https://github.com/ed-systems/middle/issues/6
-function grade_question($input, $solution_encoded){
-  $copy = $input;
+function grade_question($input){
+  $copy = $input; 
   # new - get solution from url arguments rather than json
-  $question_def = urldecode($solution_encoded);
+  $question_def = urldecode($copy['solution']);
   // parse for function name and number of args - remember, this is for extracing input elements rather than validating. colon is NOT optional (here it is, just to see if they entered it)
-  $func_name_regex = '/def (?<func_name>\w+)\((?<args>[\w, ]+)\)(?<colon>:?)\s?(?<def>\X+)/';
+  $func_name_regex = '/def (?<func_name>\w+)\((?<args>[\w, ]+)\)(?<colon>:?)\s(?<def>\X+)/';
   preg_match($func_name_regex, $question_def, $matches);
   $func_name = $matches['func_name'];
+  #print_r($matches);
   $num_args = sizeof(explode(",", $matches['args']));
   // GRADING:
   $grade = 0;
@@ -54,14 +55,16 @@ function grade_question($input, $solution_encoded){
   // ...TEST CASES
   $num_testcases = 6;
   // user may not have included semicolon, so reconstruct valid python exec str
-  $def_str = sprintf('def %s(%s): %s', $func_name, $matches['args'], $matches['def']);
+  $def_str = sprintf("def %s(%s):\n%s", $func_name, $matches['args'], $matches['def']);
   // calculate points left, out of 100, after func_name/colon/constraint...
   $remaining_points = 100 - ($copy['colon_points'] + $copy['function_name_points'] + $copy['constraint_points']);
   // find the number of non_null test cases, calculate question worth
   $num_valid_questions = 0;
   for ($n = 1; $n <= $num_testcases; $n++){
     $in_idx = sprintf('input%d', $n);
-    $num_valid_questions += 1;
+    if (!empty($copy[$in_idx])){
+      $num_valid_questions += 1;
+    }
   }
   $question_points = $remaining_points/$num_valid_questions;
   // ... save to json
@@ -101,41 +104,43 @@ function grade_question($input, $solution_encoded){
 #/* NORMAL OPERATION
 $backend_input = file_get_contents('php://input');
 $backend_data = json_decode($backend_input, true);
-echo grade_question($backend_data, $_GET['solution']);
+echo grade_question($backend_data);
 #*/
 
 // TESTS
-// python3 exec
-//echo print_r(python3_exec(array('print("hello")', 'print("world")')));
-
 /* grade question test
-$test_solution = "def%20add%28a%2Cb%29%3A%0A%20%20%20%20return%20a%2Bb";
+$test_solution = "def%20operation%28op%2C%20a%2C%20b%29%3A%0A%20%20%20%20if%20op%20%3D%3D%20%27%2B%27%3A%0A%20%20%20%20%20%20%20%20return%20a%20%2B%20b%0A%20%20%20%20elif%20op%20%3D%3D%20%27-%27%3A%0A%20%20%20%20%20%20%20%20return%20a%20-%20b%0A%20%20%20%20elif%20op%20%3D%3D%20%27%2A%27%3A%0A%20%20%20%20%20%20%20%20return%20a%20%2A%20b%0A%20%20%20%20elif%20op%20%3D%3D%20%27%2F%27%3A%0A%20%20%20%20%20%20%20%20return%20a%20%2F%20b%0A%20%20%20%20else%3A%0A%20%20%20%20%20%20%20%20return%20-1";
 $test_json = <<<JSON
 {
   "questionID": "32",
-  "points": "100",
-  "function_name": "add",
+  "points": "100", "solution":"def%20operation%28op%2C%20a%2C%20b%29%3A%0A%20%20%20%20if%20op%20%3D%3D%20%27%2B%27%3A%0A%20%20%20%20%20%20%20%20return%20a%20%2B%20b%0A%20%20%20%20elif%20op%20%3D%3D%20%27-%27%3A%0A%20%20%20%20%20%20%20%20return%20a%20-%20b%0A%20%20%20%20elif%20op%20%3D%3D%20%27%2A%27%3A%0A%20%20%20%20%20%20%20%20return%20a%20%2A%20b%0A%20%20%20%20elif%20op%20%3D%3D%20%27%2F%27%3A%0A%20%20%20%20%20%20%20%20return%20a%20%2F%20b%0A%20%20%20%20else%3A%0A%20%20%20%20%20%20%20%20return%20-1",
+  "function_name": "operation",
   "function_name_points": 10,
-  "constraint": "print",
+  "constraint": "elif",
   "constraint_points": 20,
   "colon_points": 10,
-  "input1": "1, 2",
-  "input2": "3, 4",
-  "input3": "7, 8",
-  "input4": "-1, 1",
-  "input5": "2, 2",
-  "input6": "0, 0",
+  "input1": "'+', 1, 2",
+  "input2": "'-', 3, 4",
+  "input3": "'*', 7, 8",
+  "input4": "'/', -1, 1",
+  "input5": "'^', 2, 2",
+  "input6": null,
   "output1": "3",
-  "output2": "7",
-  "output3": "15",
-  "output4": "0",
-  "output5": "4",
-  "output6": "0"
+  "output2": "-1",
+  "output3": "56",
+  "output4": "-1.0",
+  "output5": "-1",
+  "output6": null,
+  "output1_points": 10,
+  "output2_points": 10,
+  "output3_points": 10,
+  "output4_points": 10,
+  "output5_points": 10,
+  "output6_points": null
 }
 JSON;
-#$test_json = str_replace("\n", '\n', $test_json);
 $test = json_decode($test_json, true);
-$res_json = grade_question($test, $test_solution);
+$res_json = grade_question($test);
 #echo $res_json;
 print_r(json_decode($res_json, true));
 #*/
