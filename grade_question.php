@@ -1,8 +1,33 @@
 <?php
-function python3_exec($lines){
-  // combine input lines into newline seperated string
-  $lines_arg = join("\n", $lines);
-  $exec_str = sprintf("python -c \"%s\"", $lines_arg);
+
+function python3_timeout($defs, $exec, $timeout){
+  $python3_timelimit = <<<CODE
+import signal
+
+# student definition solutions
+%s
+
+def signal_handler(signum, frame):
+    raise Exception('timeout')
+    
+signal.signal(signal.SIGALRM, signal_handler)
+signal.alarm(%d)
+try:
+    # run student solution
+    %s
+except Exception, msg:
+    print 'timeout'
+CODE;
+  # "timeout" in output used as sentinel
+  return sprintf($python3_timelimit, $defs, $timeout, $exec);
+}
+
+function python3_exec($defs, $func_name, $question_args){
+  $timeout_secs = 10;
+  // format string for call, e.g "print(add(%d, %d))"
+  $func_call_str = sprintf('print(%s(%s))', $func_name, $question_args);
+  $timeout_exec = python3_timeout($defs, $func_call_str, $timeout_secs);
+  $exec_str = sprintf("python -c \"%s\"", $timeout_exec);
   exec($exec_str, $out, $ret_code);
   // returns array (output, ret code). php system() returns last line only
   return array($out, $ret_code);
@@ -56,37 +81,28 @@ function grade_question($input){
   $num_testcases = 6;
   // user may not have included semicolon, so reconstruct valid python exec str
   $def_str = sprintf("def %s(%s):\n%s", $func_name, $matches['args'], $matches['def']);
-  // calculate points left, out of 100, after func_name/colon/constraint...
-  $remaining_points = 100 - ($copy['colon_points'] + $copy['function_name_points'] + $copy['constraint_points']);
-  // find the number of non_null test cases, calculate question worth
-  $num_valid_questions = 0;
-  for ($n = 1; $n <= $num_testcases; $n++){
-    $in_idx = sprintf('input%d', $n);
-    if (!empty($copy[$in_idx])){
-      $num_valid_questions += 1;
-    }
-  }
-  $question_points = $remaining_points/$num_valid_questions;
-  // ... save to json
-  $copy['output_points'] = $question_points;
   for ($n = 1; $n <= $num_testcases; $n++){
     $in_idx = sprintf('input%d', $n);
     $out_idx = sprintf('output%d', $n);
+    $out_points_idx = sprintf('output%d_points', $n);
     $res_idx = sprintf('result%d', $n);
     $res_points_idx = sprintf('result%d_points', $n);
     $question_args = $copy[$in_idx];
     // don't run null testcases
     if ($copy[$in_idx] != null){
-      // format string for call, e.g "print(add(%d, %d))"
-      $func_call_str = sprintf('print(%s(%s))', $func_name, $question_args);
-      // exec and get result, add to json copy
-      $res = python3_exec(array($def_str, $func_call_str));
+      $res = python3_exec($def_str, $func_name, $question_args);
       $copy[$res_idx] = $res[0][0];
-      // compare result to output and add points if correct
-      if ($copy[$out_idx] == $copy[$res_idx]){
-        $copy[$res_points_idx] = $question_points;
-        $grade += $question_points;
+      // timed out - null result
+      if ($res[0][0] == "timeout"){
+        $copy[$res_idx] = null;
+        $copy[$res_points_idx] = 0;
       }
+      // compare result to output and add points if correct
+      else if ($copy[$out_idx] == $copy[$res_idx]){
+        $copy[$res_points_idx] = $copy[$out_points_idx];
+        $grade += $copy[$out_points_idx]; 
+      }
+      // not correct output
       else {
         $copy[$res_points_idx] = 0;
       }
